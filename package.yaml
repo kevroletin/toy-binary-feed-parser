@@ -53,3 +53,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - tsuru-task
+    - tasty
+    - tasty-hunit
