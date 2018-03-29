@@ -3,10 +3,9 @@ module Packet (
   , Packet(..)
 ) where
 
-import qualified Data.List             as List
-import           Data.Time.Clock       (UTCTime)
-import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
-import           Data.Word             (Word32)
+import qualified Data.List               as List
+import           Data.Time.Clock.POSIX   (posixSecondsToUTCTime)
+import           Data.Word               (Word32)
 import           Message
 
 data PacketTime = PacketTime
@@ -22,13 +21,17 @@ data Packet = Packet
 instance Show Packet where
   show = packetToStr
 
+-- packetTimeToUtc is significantly slower than packetTimeToStr
 packetTimeToUtc (PacketTime s u) =
-  posixSecondsToUTCTime $ (fromIntegral s) + (fromIntegral u / 1000000)
+  posixSecondsToUTCTime $ (fromIntegral $ s * 1000000 + u) / 1000000
+
+packetTimeToStr (PacketTime s u) =
+  show s ++ '.' : show u
 
 packetToStr :: Packet -> String
 packetToStr (Packet time msg) =
   List.intercalate " " $
-    [ show (packetTimeToUtc time)
+    [ packetTimeToStr time
     , messageIssueCode msg
     , show (messageAcceptTime msg)]
     ++ fmap suppStr (reverse $ messageBids msg)

@@ -21,11 +21,14 @@ newtype PacketOrdByAcceptTime =
 
 instance Ord PacketOrdByAcceptTime where
   PacketOrdByAcceptTime a <= PacketOrdByAcceptTime b =
-    if time a == time b
-      then code a <= code b
-      else time a <= time b
+    if atime a /= atime b
+      then atime a <= atime b
+      else if ptime a /= ptime b
+              then ptime a <= ptime b
+              else code a <= code b
     where
-      time = messageAcceptTime . packetMessage
+      atime = messageAcceptTime . packetMessage
+      ptime = packetTime
       code = messageIssueCode  . packetMessage
 
 type ReordererState = Set PacketOrdByAcceptTime
