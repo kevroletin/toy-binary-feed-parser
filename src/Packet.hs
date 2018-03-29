@@ -3,10 +3,10 @@ module Packet (
   , Packet(..)
 ) where
 
-import qualified Data.List                       as List
-import           Data.Time.Clock                 (UTCTime)
-import           Data.Time.Clock.POSIX           (posixSecondsToUTCTime)
-import           Data.Word                       (Word32)
+import qualified Data.List             as List
+import           Data.Time.Clock       (UTCTime)
+import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import           Data.Word             (Word32)
 import           Message
 
 data PacketTime = PacketTime

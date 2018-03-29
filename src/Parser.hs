@@ -12,7 +12,6 @@ module Parser (
 import           Control.Monad.State
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as C
-import qualified Data.ByteString.Lazy  as BL
 
 type Parser a = StateT BS.ByteString Maybe a
 

@@ -28,6 +28,8 @@ dependencies:
 - containers
 - attoparsec
 - attoparsec-binary
+- pipes
+- pipes-attoparsec
 
 library:
   source-dirs: src

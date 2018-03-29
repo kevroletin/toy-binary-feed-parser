@@ -4,21 +4,28 @@
 module Main where
 
 import           Control.Monad.State  (forM_)
-import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as BL
-import           Pcap
-import           System.Environment   (getArgs)
+import           Packet               (Packet (..))
+import           Pcap                 (parsePcapBL)
+import           Reorderer            (reorderM_)
+import           System.Environment   (getArgs, getProgName)
 
 printHelp :: IO ()
-printHelp = print "Please specify file name as an argument"
+printHelp = do prog <- getProgName
+               mapM_ putStrLn
+                 [ "Possible execution modes:"
+                 , "  " ++ prog ++ " <file.pcap>"
+                 , "  " ++ prog ++ " -r <file.pcap>"]
 
-printPacketsFromFile :: String -> IO ()
-printPacketsFromFile file = do
+printPacketsFromFile ::
+     ([Packet.Packet] -> (Packet -> IO ()) -> IO b) -> FilePath -> IO b
+printPacketsFromFile for file = do
   bl <- BL.readFile file
-  forM_ (parsePcapBl bl) $ putStrLn . show
+  for (parsePcapBL bl) $ putStrLn . show
 
 main :: IO ()
 main = do args <- getArgs
           case args of
-            [f] -> printPacketsFromFile f
-            _   -> printHelp
+            [f]       -> printPacketsFromFile forM_     f
+            ["-r", f] -> printPacketsFromFile reorderM_ f
+            _         -> printHelp

@@ -10,14 +10,10 @@ module Message (
   , messageStartMarker
 ) where
 
-import qualified Data.Attoparsec.Binary           as A
-import qualified Data.Attoparsec.ByteString       as A
 import qualified Data.Attoparsec.ByteString.Char8 as A
-import qualified Data.Attoparsec.ByteString.Lazy  as AL
 import qualified Data.ByteString                  as BS
 import qualified Data.ByteString.Char8            as C
 import qualified Data.List                        as List
-import           Data.Maybe                       (fromMaybe)
 
 data Supply = Supply
   { price    :: Int
@@ -25,7 +21,6 @@ data Supply = Supply
   } deriving (Show, Eq)
 
 newtype AcceptTime = AcceptTime Int deriving (Eq, Ord)
-
 data Message = Message
   { messageBids       :: ![Supply]
   , messageAsks       :: ![Supply]

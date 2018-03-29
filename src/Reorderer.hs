@@ -1,5 +1,5 @@
 module Reorderer (
-
+  reorderM_
 ) where
 
 import           Control.Monad.State
@@ -59,14 +59,16 @@ outputMaturePackets out newestTime = do
       outputMaturePackets out newestTime
     Immature -> return ()
 
-reorder :: Monad m
-        => m (Maybe Packet)
+reorder' :: Monad m
+        => [Packet]
         -> (Packet -> m ())
         -> StateT ReordererState m ()
-reorder inp out = do
-  p0 <- lift $ inp
-  case p0 of
-    Nothing -> flushBuffer out
-    Just  p -> do
-      addNewPacket p
-      outputMaturePackets out (messageAcceptTime . packetMessage $ p)
+reorder' []       out = flushBuffer out
+reorder' (x : xs) out = do
+  addNewPacket x
+  outputMaturePackets out (messageAcceptTime . packetMessage $ x)
+  reorder' xs out
+
+reorderM_ :: Monad m
+          => [Packet] -> (Packet -> m ()) -> m ()
+reorderM_ xs out = evalStateT (reorder' xs out) Set.empty

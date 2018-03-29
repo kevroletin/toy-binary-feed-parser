@@ -1,5 +1,5 @@
 module Pcap (
-  parsePcapBl
+  parsePcapBL
   , parsePcapRawBl
 ) where
 
@@ -7,9 +7,7 @@ import qualified Data.Attoparsec.Binary          as A
 import qualified Data.Attoparsec.ByteString      as A
 import qualified Data.Attoparsec.ByteString.Lazy as AL
 import qualified Data.ByteString                 as BS
-import qualified Data.ByteString.Char8           as C
 import qualified Data.ByteString.Lazy            as BL
-import qualified Data.List                       as List
 import           Data.Maybe                      (mapMaybe)
 import           GHC.Stack
 import           Packet
@@ -51,5 +49,5 @@ parsePacket (t, str) =
     Left _  -> Nothing
     Right m -> Just $ Packet t m
 
-parsePcapBl :: BL.ByteString -> [Packet]
-parsePcapBl bs = mapMaybe parsePacket (parsePcapRawBl bs)
+parsePcapBL :: BL.ByteString -> [Packet]
+parsePcapBL bs = mapMaybe parsePacket (parsePcapRawBl bs)
