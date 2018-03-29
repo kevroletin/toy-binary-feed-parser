@@ -1,5 +1,8 @@
 module Reorderer (
   reorderM_
+  , compareAcceptTime
+  , AcceptTimeComparison(..)
+  , Seconds(..)
 ) where
 
 import           Control.Monad.State
@@ -8,6 +11,8 @@ import qualified Data.Set              as Set
 import           GHC.Stack
 import           Packet
 import           Message
+
+import Debug.Trace
 
 newtype PacketOrdByAcceptTime =
   PacketOrdByAcceptTime
@@ -21,7 +26,7 @@ instance Ord PacketOrdByAcceptTime where
       else time a <= time b
     where
       time = messageAcceptTime . packetMessage
-      code = messageAcceptTime . packetMessage
+      code = messageIssueCode  . packetMessage
 
 type ReordererState = Set PacketOrdByAcceptTime
 
@@ -45,6 +50,8 @@ flushBuffer out = do xs <- get
 addNewPacket :: Monad m => Packet -> StateT ReordererState m ()
 addNewPacket p = modify $ Set.insert (PacketOrdByAcceptTime p)
 
+-- TODO: remove assumption
+-- here we assume that state always contains at least one packet
 outputMaturePackets :: (HasCallStack, Monad m)
                     => (Packet -> m ())
                     -> AcceptTime

@@ -30,6 +30,8 @@ dependencies:
 - attoparsec-binary
 - pipes
 - pipes-attoparsec
+- tasty
+- tasty-hunit
 
 library:
   source-dirs: src
