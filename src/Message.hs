@@ -65,7 +65,12 @@ deconstructAcceptTime (AcceptTime x) = (h, m, s, u)
     (s, u  ) = r2_ `divMod` (          100)
 
 parseInt :: Int -> A.Parser Int
-parseInt n = read <$> A.count n A.digit
+parseInt n = do res <- C.readInt <$> A.take n
+                case res of
+                  Nothing        -> fail "Number format"
+                  Just (x, rest) -> if BS.null rest
+                                      then return x
+                                      else fail "Number format"
 
 parseMessage :: A.Parser Message
 parseMessage = do
