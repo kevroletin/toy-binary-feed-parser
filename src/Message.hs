@@ -10,10 +10,14 @@ module Message (
   , messageStartMarker
 ) where
 
-import qualified Data.ByteString       as BS
-import qualified Data.ByteString.Char8 as C
-import qualified Data.List             as List
-import           Parser
+import qualified Data.Attoparsec.Binary           as A
+import qualified Data.Attoparsec.ByteString       as A
+import qualified Data.Attoparsec.ByteString.Char8 as A
+import qualified Data.Attoparsec.ByteString.Lazy  as AL
+import qualified Data.ByteString                  as BS
+import qualified Data.ByteString.Char8            as C
+import qualified Data.List                        as List
+import           Data.Maybe                       (fromMaybe)
 
 data Supply = Supply
   { price    :: Int
@@ -27,7 +31,7 @@ data Message = Message
   , messageAsks       :: ![Supply]
   , messageAcceptTime :: !AcceptTime
   , messageIssueCode  :: !String
-  } deriving (Show, Eq)
+  } deriving Eq
 
 instance Show AcceptTime where
   show at = List.intercalate ":" (fmap frm [h, m, s]) ++ "." ++ (frm u)
@@ -36,6 +40,19 @@ instance Show AcceptTime where
       frm x = case show x of
                 [c] -> ['0', c]
                 s   -> s
+
+instance Show Message where
+  show = showMessage
+
+showMessage :: Message -> String
+showMessage msg =
+  List.intercalate " " $
+    [ messageIssueCode msg
+    , show (messageAcceptTime msg)]
+    ++ fmap suppStr (reverse $ messageBids msg)
+    ++ fmap suppStr (messageAsks msg)
+  where
+    suppStr (Supply p q) = show q ++ "@" ++ show p
 
 messageStartMarker :: BS.ByteString
 messageStartMarker = "B6034"
@@ -47,15 +64,18 @@ deconstructAcceptTime (AcceptTime x) = (h, m, s, u)
     (m, r2_) = r1_ `divMod` (     60 * 100)
     (s, u  ) = r2_ `divMod` (          100)
 
-parseMessage :: Parser Message
+parseInt :: Int -> A.Parser Int
+parseInt n = read <$> A.count n A.digit
+
+parseMessage :: A.Parser Message
 parseMessage = do
-  ensureStr messageStartMarker
-  issueCode <- readCnt 12 -- Issue code
-  skipCnt (3 + 2 + 7)     -- Issue seq.-no. Market Status Type Total bid quote volume
+  A.string messageStartMarker
+  issueCode <- A.take 12
+  _  <- A.take (3 + 2 + 7)
   bs <- parseManyPairs 5
-  skipCnt 7               -- Total ask quote volume
+  _  <- A.take 7
   as <- parseManyPairs 5
-  skipCnt $ (5 + 4 * 5) * 2 -- Two sections of best bids
+  _  <- A.take $ (5 + 4 * 5) * 2
   atime <- parseAcceptTime
   return $ Message {
       messageBids = bs
@@ -67,14 +87,11 @@ parseMessage = do
     parsePair = Supply <$> parseInt 5 <*> parseInt 7
     parseManyPairs n = sequence [parsePair | _ <- [1 .. n]]
 
-parseAcceptTime :: Parser AcceptTime
+parseAcceptTime :: A.Parser AcceptTime
 parseAcceptTime = do
-  h <- readPart
-  m <- readPart
-  s <- readPart
-  u <- readPart
+  h <- parseInt 2
+  m <- parseInt 2
+  s <- parseInt 2
+  u <- parseInt 2
   return $ AcceptTime (((h * 60 + m) * 60 + s) * 100 + u)
   where
-    readPart :: Parser Int
-    readPart = do str <- readCnt 2
-                  lift (fst <$> C.readInt str)

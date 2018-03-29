@@ -1,18 +1,13 @@
 module Packet (
   PacketTime(..)
   , Packet(..)
-  , parsePacket
-  , packetToStr
 ) where
 
-import qualified Data.ByteString       as BS
-import qualified Data.ByteString.Char8 as C
-import qualified Data.List             as List
-import           Data.Time.Clock       (UTCTime)
-import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
-import           Data.Word             (Word32)
+import qualified Data.List                       as List
+import           Data.Time.Clock                 (UTCTime)
+import           Data.Time.Clock.POSIX           (posixSecondsToUTCTime)
+import           Data.Word                       (Word32)
 import           Message
-import           Parser
 
 data PacketTime = PacketTime
   { packetTimeSec  :: {-# UNPACK #-} !Word32
@@ -26,15 +21,6 @@ data Packet = Packet
 
 instance Show Packet where
   show = packetToStr
-
-parsePacket :: PacketTime -> BS.ByteString -> Maybe Packet
-parsePacket packetTime str =
-  case parse (skipIpHeaders >> parseMessage) str of
-    Nothing  -> Nothing
-    Just msg -> Just $ Packet packetTime msg
-
-skipIpHeaders :: Parser ()
-skipIpHeaders = skipCnt 42 -- IP4 + Ethernet package length
 
 packetTimeToUtc (PacketTime s u) =
   posixSecondsToUTCTime $ (fromIntegral s) + (fromIntegral u / 1000000)
