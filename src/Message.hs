@@ -21,6 +21,7 @@ data Supply = Supply
   } deriving (Show, Eq)
 
 newtype AcceptTime = AcceptTime Int deriving (Eq, Ord)
+
 data Message = Message
   { messageBids       :: ![Supply]
   , messageAsks       :: ![Supply]

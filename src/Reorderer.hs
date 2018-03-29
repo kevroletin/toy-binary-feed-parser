@@ -8,7 +8,6 @@ module Reorderer (
 import           Control.Monad.State
 import           Data.Set              (Set)
 import qualified Data.Set              as Set
-import           GHC.Stack
 import           Packet
 import           Message
 
@@ -53,21 +52,21 @@ flushBuffer out = do xs <- get
 addNewPacket :: Monad m => Packet -> StateT ReordererState m ()
 addNewPacket p = modify $ Set.insert (PacketOrdByAcceptTime p)
 
--- TODO: remove assumption
--- here we assume that state always contains at least one packet
-outputMaturePackets :: (HasCallStack, Monad m)
+outputMaturePackets :: Monad m
                     => (Packet -> m ())
                     -> AcceptTime
                     -> StateT ReordererState m ()
 outputMaturePackets out newestTime = do
-  oldest <- gets (Set.elemAt 0)
-  let oldestTime = messageAcceptTime . packetMessage . unOrdPacket $ oldest
-  case compareAcceptTime newestTime oldestTime (Seconds 3) of
-    Mature   -> do
-      lift $ out (unOrdPacket oldest)
-      modify (Set.delete oldest)
-      outputMaturePackets out newestTime
-    Immature -> return ()
+  noElems <- gets (Set.null)
+  unless (noElems) $ do
+    oldest <- gets (Set.elemAt 0)
+    let oldestTime = messageAcceptTime . packetMessage . unOrdPacket $ oldest
+    case compareAcceptTime newestTime oldestTime (Seconds 3) of
+      Mature   -> do
+        lift $ out (unOrdPacket oldest)
+        modify (Set.delete oldest)
+        outputMaturePackets out newestTime
+      Immature -> return ()
 
 reorder' :: Monad m
         => [Packet]
