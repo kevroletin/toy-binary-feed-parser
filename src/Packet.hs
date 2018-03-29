@@ -1,5 +1,5 @@
 module Packet (
-  PacketTime
+  PacketTime(..)
   , Packet(..)
   , parsePacket
   , packetToStr
@@ -8,10 +8,10 @@ module Packet (
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as C
 import qualified Data.List             as List
+import           Data.Time.Clock       (UTCTime)
 import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import           Data.Word             (Word32)
 import           Message
-import qualified Network.Pcap          as Pcap
 import           Parser
 
 data PacketTime = PacketTime
@@ -22,15 +22,17 @@ data PacketTime = PacketTime
 data Packet = Packet
   { packetTime    :: {-# UNPACK #-} !PacketTime
   , packetMessage :: !Message
-  } deriving (Show, Eq)
+  } deriving Eq
 
-parsePacket :: Pcap.PktHdr -> BS.ByteString -> Maybe Packet
-parsePacket hdr str =
+instance Show Packet where
+  show = packetToStr
+
+parsePacket :: PacketTime -> BS.ByteString -> Maybe Packet
+parsePacket packetTime str =
   case parse (skipIpHeaders >> parseMessage) str of
     Nothing  -> Nothing
     Just msg -> Just $ Packet packetTime msg
-  where
-    packetTime = PacketTime (Pcap.hdrSeconds hdr) (Pcap.hdrUseconds hdr)
+
 skipIpHeaders :: Parser ()
 skipIpHeaders = skipCnt 42 -- IP4 + Ethernet package length
 

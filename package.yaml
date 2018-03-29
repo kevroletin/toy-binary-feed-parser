@@ -23,9 +23,11 @@ dependencies:
 - base >= 4.7 && < 5
 - bytestring
 - mtl
-- pcap
 - unix-time
 - time
+- containers
+- attoparsec
+- attoparsec-binary
 
 library:
   source-dirs: src
