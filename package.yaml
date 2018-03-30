@@ -2,9 +2,9 @@ name:                tsuru-task
 version:             0.1.0.0
 github:              "githubuser/tsuru-task"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+author:              "Vasiliy Kevroletin"
+maintainer:          "kevroletin@gmail.com"
+copyright:           "2018 Vasiliy K."
 
 extra-source-files:
 - README.md
@@ -34,6 +34,8 @@ dependencies:
 
 library:
   source-dirs: src
+
+default-extensions: ApplicativeDo
 
 executables:
   tsuru-task-exe:
