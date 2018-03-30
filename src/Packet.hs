@@ -21,7 +21,8 @@ data Packet = Packet
 instance Show Packet where
   show = packetToStr
 
--- packetTimeToUtc is significantly slower than packetTimeToStr
+-- packetTimeToUtc is significantly slower than packetTimeToStr (it increases
+-- total execution time in no-reordering mode for more than 30%)
 packetTimeToUtc (PacketTime s u) =
   posixSecondsToUTCTime $ (fromIntegral $ s * 1000000 + u) / 1000000
 
@@ -29,12 +30,4 @@ packetTimeToStr (PacketTime s u) =
   show s ++ '.' : show u
 
 packetToStr :: Packet -> String
-packetToStr (Packet time msg) =
-  List.intercalate " " $
-    [ packetTimeToStr time
-    , messageIssueCode msg
-    , show (messageAcceptTime msg)]
-    ++ fmap suppStr (reverse $ messageBids msg)
-    ++ fmap suppStr (messageAsks msg)
-  where
-    suppStr (Supply p q) = show q ++ "@" ++ show p
+packetToStr (Packet time msg) = packetTimeToStr time ++ ' ' : show msg

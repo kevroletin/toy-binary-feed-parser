@@ -16,8 +16,8 @@ import qualified Data.ByteString.Char8            as C
 import qualified Data.List                        as List
 
 data Supply = Supply
-  { price    :: Int
-  , quantity :: Int
+  { price    :: {-# UNPACK #-} !Int
+  , quantity :: {-# UNPACK #-} !Int
   } deriving (Show, Eq)
 
 newtype AcceptTime = AcceptTime Int deriving (Eq, Ord)
@@ -43,8 +43,8 @@ instance Show Message where
 showMessage :: Message -> String
 showMessage msg =
   List.intercalate " " $
-    [ messageIssueCode msg
-    , show (messageAcceptTime msg)]
+    [ show (messageAcceptTime msg)
+    , messageIssueCode msg ]
     ++ fmap suppStr (reverse $ messageBids msg)
     ++ fmap suppStr (messageAsks msg)
   where

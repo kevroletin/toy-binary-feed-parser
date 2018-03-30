@@ -28,8 +28,6 @@ dependencies:
 - containers
 - attoparsec
 - attoparsec-binary
-- pipes
-- pipes-attoparsec
 - tasty
 - tasty-hunit
 - dlist

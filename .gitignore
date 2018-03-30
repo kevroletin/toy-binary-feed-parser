@@ -1,0 +1,15 @@
+.stack-work/
+tsuru-task.cabal
+*~
+*.pcap
+.#*
+GPATH
+GRTAGS
+GTAGS
+TAGS
+*.txt
+*.folded
+*.hp
+*.prof
+*.svg
+

@@ -5,13 +5,11 @@ module Reorderer (
   , Seconds(..)
 ) where
 
-import           Control.Monad.State
-import           Data.Set              (Set)
-import qualified Data.Set              as Set
-import           Packet
+import           Control.Monad.State.Strict
+import           Data.Set                   (Set)
+import qualified Data.Set                   as Set
 import           Message
-
-import Debug.Trace
+import           Packet
 
 newtype PacketOrdByAcceptTime =
   PacketOrdByAcceptTime

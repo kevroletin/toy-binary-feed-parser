@@ -33,7 +33,7 @@ parseMessagePositive = testCase "Valid message" $ do
   assertEqual "Message and trailin input" ans (run (str <> "garbage"))
   where
     run x = show <$> (A.parseOnly parseMessage) x
-    ans = Right "ISINcode1234 12:34:56.78 10@9 8@7 6@5 4@3 2@1 12@11 14@13 16@15 18@17 20@19"
+    ans = Right "12:34:56.78 ISINcode1234 10@9 8@7 6@5 4@3 2@1 12@11 14@13 16@15 18@17 20@19"
     str = "B6034ISINcode1234............000010000002000030000004000050000006000070000008000090000010.......000110000012000130000014000150000016000170000018000190000020..................................................123456780."
 
 parseMessageNegative :: TestTree
