@@ -1,4 +1,4 @@
-# Parser for marked data feed
+# Parser for the market data feed
 
 ## Usage
 
