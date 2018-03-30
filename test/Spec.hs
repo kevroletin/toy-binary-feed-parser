@@ -105,17 +105,13 @@ reordererTestSortingWindow :: TestTree
 reordererTestSortingWindow = testCase "Ensure reorderer sorts only within 3 sec window" $ do
   assertEqual "Switch adjacent messages"  [m1, m2] (run [m2, m1])
 
-  -- This is a subtle moment: we have guaranteed that in worst case accept time
-  -- will differ from receive time in 3 seconds. This means each timing packet
-  -- arrives out of order it will not differ from the newest received packet in
-  -- more than 3 seconds. So no need to track newest accept time together with
-  -- buffer. This test checks situation which guaranteed to never happen just to
-  -- demonstrate corner case which seems like a bug after a quick review.
+  -- This is a subtle moment. This test checks situation which guaranteed to never 
+  -- happen just to demonstrate the algorythm behaviour (which may seem confusing).
   assertEqual "Buffer and sort distant if not other messages flushed buffer"
     [m1, m6] (run [m6, m1])
 
   -- Here the situation is similar to the previous case except for that m6
-  -- causes flush of m2 and hence when m1 arrives it will not reorder with m2.
+  -- causes flush of m2 and hence when m1 arrives it will not be reordered with m2.
   assertEqual "Should not switch distant" [m2, m1, m6] (run [m2, m6, m1])
 
   where
