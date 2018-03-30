@@ -2,6 +2,10 @@
 
 ## Usage
 
+The simliest way to get started:
+
+    stack exec tsuru-task-exe -- <file.pcap>
+
 There are two major execution modes:
 
     <file.pcap>    - print messages
@@ -38,7 +42,7 @@ messages. Messages which are older than 3 seconds are printed. After the end of
 input, we also print buffered messages. Why this works:
 
 1. We have guarantee that difference between accept-time and packet-time will
-   never be more than 3 seconds. So packets which are inside of 3 seconds buffer
+   never be more than 3 seconds. So packets which are inside of 3-second buffer
    will never be older than packets outside of 3 seconds buffer. It can be
    proved by contradiction:
 
@@ -52,10 +56,10 @@ input, we also print buffered messages. Why this works:
    So we can print sorted messages which are older than 3 seconds and result
    will be sorted.
 
-2. If we buffer more than 3 seconds then that will not compromise algorithms.
+2. Buffering of more than 3 seconds will not compromise algorithms.
 
 3. Accept-time is always older than packet time. And pcap file stores packet in
-   the receiving order. Because of that processing packets from pcap files and
+   the receiving order. Because of that processing packets from pcap file and
    using only accept-time for comparisons without considering packet-time will
    only cause us to buffer more and hence will not compromise algorithm:
 
@@ -77,5 +81,6 @@ equal: packets-time, accept-time, issue-code.
 
 ## Links
 
-[Feed format description](http://www.tsurucapital.com/en/code-sample.html)
+[Feed format description and sample pcap file](http://www.tsurucapital.com/en/code-sample.html)
+
 [Pcap file format description (blog post)](http://www.kroosec.com/2012/10/a-look-at-pcap-file-format.html)
