@@ -26,8 +26,7 @@ checkOrder xs = find ooo (pairs xs)
 reorderFileAndCheck :: FilePath -> IO ()
 reorderFileAndCheck file = do
   bl <- BL.readFile file
-  packets <-
-    execWriterT $ reorderM_ (parsePcapBL bl) (tell . DList.singleton)
+  packets <- execWriterT $ reorderM_ (parsePcapBL bl) (tell . DList.singleton)
 
   case checkOrder (DList.toList packets) of
     Nothing -> putStrLn "Good"

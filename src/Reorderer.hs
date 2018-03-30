@@ -2,9 +2,9 @@ module Reorderer (
   reorderM_
   , compareAcceptTime
   , AcceptTimeComparison(..)
-  , Seconds(..)
 ) where
 
+import           Config (bufferingTime, Seconds(..))
 import           Control.Monad.State.Strict
 import           Data.Set                   (Set)
 import qualified Data.Set                   as Set
@@ -34,8 +34,6 @@ data AcceptTimeComparison = Mature
                           | Immature
                           deriving (Eq, Show)
 
-newtype Seconds = Seconds Int deriving (Eq, Show)
-
 compareAcceptTime :: AcceptTime -> AcceptTime -> Seconds
                   -> AcceptTimeComparison
 compareAcceptTime (AcceptTime newer) (AcceptTime older) (Seconds th) =
@@ -59,7 +57,7 @@ outputMaturePackets out newestTime = do
   unless (noElems) $ do
     oldest <- gets (Set.elemAt 0)
     let oldestTime = messageAcceptTime . packetMessage . unOrdPacket $ oldest
-    case compareAcceptTime newestTime oldestTime (Seconds 3) of
+    case compareAcceptTime newestTime oldestTime bufferingTime of
       Mature   -> do
         lift $ out (unOrdPacket oldest)
         modify (Set.delete oldest)
