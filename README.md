@@ -19,6 +19,9 @@ messages but ensures that the result is sorted.
 
 ## Implementation details
 
+Malformed Pcap packets abort execution. Malformed messages (inside of valid
+packets) are ingnored.
+
 We use lazy byte strings to achieve streaming-like execution and constant memory
 footprint. An alternative solution would be to implement explicit streaming
 using Conduit or Pipes libraries. This is something I want to explore later.
