@@ -15,8 +15,7 @@ The second one buffers 3 seconds of messages and reorders them by acceding
 accept time.
 
 There is also `-c <file.pcap>` mode for testing reordering which doesn't print
-messages but ensures that the result is sorted *(note that this execution mode
-consumes memory proportionally to input size)*.
+messages but ensures that the result is sorted. 
 
 ## Implementation details
 

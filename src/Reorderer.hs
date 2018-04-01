@@ -1,10 +1,10 @@
 module Reorderer (
-  reorderM_
+  reorder
   , compareAcceptTime
   , AcceptTimeComparison(..)
 ) where
 
-import           Config (bufferingTime, Seconds(..))
+import           Config                     (Seconds (..), bufferingTime)
 import           Control.Monad.State.Strict
 import           Data.Set                   (Set)
 import qualified Data.Set                   as Set
@@ -26,7 +26,7 @@ instance Ord PacketOrdByAcceptTime where
     where
       atime = messageAcceptTime . packetMessage
       ptime = packetTime
-      code = messageIssueCode  . packetMessage
+      code  = messageIssueCode  . packetMessage
 
 type ReordererState = Set PacketOrdByAcceptTime
 
@@ -34,46 +34,28 @@ data AcceptTimeComparison = Mature
                           | Immature
                           deriving (Eq, Show)
 
-compareAcceptTime :: AcceptTime -> AcceptTime -> Seconds
+compareAcceptTime :: AcceptTime -> AcceptTime
                   -> AcceptTimeComparison
-compareAcceptTime (AcceptTime newer) (AcceptTime older) (Seconds th) =
-  if (newer - older) > th * 100
-    then Mature
-    else Immature
+compareAcceptTime (AcceptTime newer) (AcceptTime older) =
+  let (Seconds th) = bufferingTime
+  in if (newer - older) > th * 100
+       then Mature
+       else Immature
 
-flushBuffer :: Monad m => (Packet -> m ()) -> StateT ReordererState m ()
-flushBuffer out = do xs <- get
-                     lift $ mapM_ (out . unOrdPacket) xs
+reorder' :: Set PacketOrdByAcceptTime -> [Packet] -> [Packet]
+reorder' buff [] = fmap unOrdPacket $ Set.toList buff
+reorder' buff (x : xs)
+  | Set.null buff = reorder' (Set.singleton $ PacketOrdByAcceptTime x) xs
+  | otherwise =
+    let oldest     = Set.elemAt 0 buff
+        atime      = messageAcceptTime . packetMessage
+        oldestTime = atime $ unOrdPacket oldest
+        newestTime = atime x
+    in case compareAcceptTime newestTime oldestTime of
+      Mature ->
+        unOrdPacket oldest : reorder' (Set.delete oldest buff) (x : xs)
+      Immature ->
+        reorder' (Set.insert (PacketOrdByAcceptTime x) buff) xs
 
-addNewPacket :: Monad m => Packet -> StateT ReordererState m ()
-addNewPacket p = modify $ Set.insert (PacketOrdByAcceptTime p)
-
-outputMaturePackets :: Monad m
-                    => (Packet -> m ())
-                    -> AcceptTime
-                    -> StateT ReordererState m ()
-outputMaturePackets out newestTime = do
-  noElems <- gets (Set.null)
-  unless (noElems) $ do
-    oldest <- gets (Set.elemAt 0)
-    let oldestTime = messageAcceptTime . packetMessage . unOrdPacket $ oldest
-    case compareAcceptTime newestTime oldestTime bufferingTime of
-      Mature   -> do
-        lift $ out (unOrdPacket oldest)
-        modify (Set.delete oldest)
-        outputMaturePackets out newestTime
-      Immature -> return ()
-
-reorder' :: Monad m
-        => [Packet]
-        -> (Packet -> m ())
-        -> StateT ReordererState m ()
-reorder' []       out = flushBuffer out
-reorder' (x : xs) out = do
-  addNewPacket x
-  outputMaturePackets out (messageAcceptTime . packetMessage $ x)
-  reorder' xs out
-
-reorderM_ :: Monad m
-          => [Packet] -> (Packet -> m ()) -> m ()
-reorderM_ xs out = evalStateT (reorder' xs out) Set.empty
+reorder :: [Packet] -> [Packet]
+reorder = reorder' Set.empty

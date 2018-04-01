@@ -30,7 +30,6 @@ dependencies:
 - attoparsec-binary
 - tasty
 - tasty-hunit
-- dlist
 
 library:
   source-dirs: src
