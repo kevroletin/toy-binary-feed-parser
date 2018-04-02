@@ -1,16 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import           Control.Monad.Writer
-import qualified Data.Attoparsec.Binary          as A
-import qualified Data.Attoparsec.ByteString      as A
-import qualified Data.Attoparsec.ByteString.Lazy as AL
-import           Data.Either                     (isLeft)
-import           Data.Monoid                     ((<>))
-import           GHC.Word
-import           Message
-import           Packet
-import           Reorderer
+import qualified Data.Attoparsec.ByteString as A
+import           Data.Either                (isLeft)
+import           Data.Monoid                ((<>))
+import           GHC.Word                   (Word32)
+import           Message                    (AcceptTime (..), Message (..),
+                                             Supply (..), parseMessage)
+import           Packet                     (Packet (..), PacketTime (..))
+import           Reorderer                  (AcceptTimeComparison (..),
+                                             compareAcceptTime, reorder)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
@@ -62,19 +61,18 @@ makePacket netTime msgTime msgId =
 
 reordererComparisons :: TestTree
 reordererComparisons = testCase "Arrival time comparison" $ do
-  assertEqual "Mature" Mature $ compareAcceptTime (AcceptTime 301) (AcceptTime 0) (Seconds 3)
-  assertEqual "Immature" Immature $ compareAcceptTime (AcceptTime 100) (AcceptTime 0) (Seconds 3)
-  assertEqual "Flipped arguments" Immature $ compareAcceptTime (AcceptTime 0) (AcceptTime 300) (Seconds 3)
+  assertEqual "Mature" Mature $ compareAcceptTime (AcceptTime 301) (AcceptTime 0)
+  assertEqual "Immature" Immature $ compareAcceptTime (AcceptTime 100) (AcceptTime 0)
+  assertEqual "Flipped arguments" Immature $ compareAcceptTime (AcceptTime 0) (AcceptTime 300)
 
 reordererTest :: TestTree
 reordererTest = testCase "Basic work of reorderer" $ do
-  assertEqual "Already sorted" sorted $ run sorted
-  assertEqual "Reversed"       sorted $ run (reverse sorted)
-  assertEqual "Shuffled"       sorted $ run [m5, m1, m3, m2, m6, m4]
-  assertEqual "Single elem"    [m1]   $ run [m1]
-  assertEqual "Empty input"    []     $ run []
+  assertEqual "Already sorted" sorted $ reorder sorted
+  assertEqual "Reversed"       sorted $ reorder (reverse sorted)
+  assertEqual "Shuffled"       sorted $ reorder [m5, m1, m3, m2, m6, m4]
+  assertEqual "Single elem"    [m1]   $ reorder [m1]
+  assertEqual "Empty input"    []     $ reorder []
   where
-    run xs = execWriter $ reorderM_ xs (tell . (:[]))
     sorted = [m1, m2, m3, m4, m5, m6]
     m1 = makePacket 1 1 "m1"
     m2 = makePacket 1 2 "m2"
@@ -85,14 +83,13 @@ reordererTest = testCase "Basic work of reorderer" $ do
 
 reordererTestSortingField :: TestTree
 reordererTestSortingField = testCase "Ensure reorderer sorts by message accept time" $ do
-  assertEqual "Already sorted" sorted   $ run sorted
-  assertEqual "Reversed"       sorted   $ run (reverse sorted)
-  assertEqual "Shuffled"       sorted   $ run [m5, m1, m3, m2, m6, m4]
-  assertEqual "Distant elems"  [m1, m6] $ run [m6, m1]
-  assertEqual "Single elem"    [m1]     $ run [m1]
-  assertEqual "Empty input"    []       $ run []
+  assertEqual "Already sorted" sorted   $ reorder sorted
+  assertEqual "Reversed"       sorted   $ reorder (reverse sorted)
+  assertEqual "Shuffled"       sorted   $ reorder [m5, m1, m3, m2, m6, m4]
+  assertEqual "Distant elems"  [m1, m6] $ reorder [m6, m1]
+  assertEqual "Single elem"    [m1]     $ reorder [m1]
+  assertEqual "Empty input"    []       $ reorder []
   where
-    run xs = execWriter $ reorderM_ xs (tell . (:[]))
     sorted = [m1, m2, m3, m4, m5, m6]
     m1 = makePacket 1 1 "m6"
     m2 = makePacket 3 2 "m5"
@@ -103,19 +100,18 @@ reordererTestSortingField = testCase "Ensure reorderer sorts by message accept t
 
 reordererTestSortingWindow :: TestTree
 reordererTestSortingWindow = testCase "Ensure reorderer sorts only within 3 sec window" $ do
-  assertEqual "Switch adjacent messages"  [m1, m2] (run [m2, m1])
+  assertEqual "Switch adjacent messages"  [m1, m2] (reorder [m2, m1])
 
-  -- This is a subtle moment. This test checks situation which guaranteed to never 
+  -- This is a subtle moment. This test checks situation which guaranteed to never
   -- happen just to demonstrate the algorythm behaviour (which may seem confusing).
   assertEqual "Buffer and sort distant if not other messages flushed buffer"
-    [m1, m6] (run [m6, m1])
+    [m1, m6] (reorder [m6, m1])
 
   -- Here the situation is similar to the previous case except for that m6
   -- causes flush of m2 and hence when m1 arrives it will not be reordered with m2.
-  assertEqual "Should not switch distant" [m2, m1, m6] (run [m2, m6, m1])
+  assertEqual "Should not switch distant" [m2, m1, m6] (reorder [m2, m6, m1])
 
   where
-    run xs = execWriter $ reorderM_ xs (tell . (:[]))
     sorted = [m1, m2, m3, m4, m5, m6]
     m1 = makePacket 1   0 "m1"
     m2 = makePacket 1 100 "m2"
